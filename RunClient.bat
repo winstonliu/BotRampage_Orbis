@@ -1,2 +1,2 @@
 @ECHO OFF 
-py -3 RunPythonClient.py %*
+python3 RunPythonClient.py %*

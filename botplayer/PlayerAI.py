@@ -8,6 +8,7 @@ class PlayerAI:
         pass
 
     def get_move(self, gameboard, player, opponent):
+        from time import time
         pu = gameboard.power_ups[1]        
         if gameboard.current_turn == 0:
             self.generate_graph(gameboard)
@@ -15,14 +16,24 @@ class PlayerAI:
             print("Going for: " + str(pu.y) + ", " + str(pu.x))
             print("Starting at: " + str(player.y) + ", " + str(player.x))
             #print(nx.shortest_path(self.G, (player.y, player.x), (pu.y, pu.x)))
-    
+
         path = self.get_shortest_path(player, pu, [(6,1)])
         print(path)
         if len(path)>1:
+            start = time()
             next_move = self.movement_direction(path[0][0], path[0][1], path[1][0], path[1][1], gameboard, player)
             print(next_move)
+            print(time()*1000-start*1000)            
             return next_move
         return Move.NONE
+        
+    def should_fire_laser(self, gameboard, player, opponent):
+        path = self.get_shortest_path(player, opponent)
+        moves = [self.movement_direction(path[i], path[i+1]) for i in range(0, len(path)-1)]
+        
+        if len(path)<4:
+            return True
+        return False
     
     def get_shortest_path(self, player, target, avoid):
         """
