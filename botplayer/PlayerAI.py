@@ -37,13 +37,13 @@ class PlayerAI:
             dbout("Checking turret: " + str(b.x) + " " + str(b.y))
             for i in range(1,5):
                 # Check in each of the four cardinal directions
-                if (not gameboard.is_wall_at_tile(b.x, (b.y+i)%gameboard.width) and not hasWall[0]):
-                    d.append((b.x, (b.y+i)%gameboard.width)) 
+                if (not gameboard.is_wall_at_tile(b.x, (b.y+i)%gameboard.height) and not hasWall[0]):
+                    d.append((b.x, (b.y+i)%gameboard.height)) 
                 else: 
                     hasWall[0]=True
 
-                if (not gameboard.is_wall_at_tile(b.x, (b.y-i)%gameboard.width) and not hasWall[1]):
-                    d.append((b.x, (b.y-i)%gameboard.width)) 
+                if (not gameboard.is_wall_at_tile(b.x, (b.y-i)%gameboard.height) and not hasWall[1]):
+                    d.append((b.x, (b.y-i)%gameboard.height)) 
                 else:
                     hasWall[1]=True
 
@@ -64,17 +64,28 @@ class PlayerAI:
         avoid = []
 
         # Check for incoming turret fire
-        if len(gameboard.turrets) > 0:
-            for i, b in enumerate(gameboard.turrets):
-                if b.is_firing_next_turn:
-                    avoid += (self.tr_firingarc[i][1], self.tr_firingarc[i][0]) # Convert to (y,x)
+        for i, b in enumerate(gameboard.turrets):
+            if b.is_firing_next_turn:
+                avoid += [(k[1], k[0]) for k in self.tr_firingarc[i]] # Convert to (y,x)
+
+        dbout("Turret tiles: " + str(self.tr_firingarc))
+        dbout("Turret tiles: " + str(avoid))
 
         # Check for incoming bullets
-        # if len(gameboard.bullets) > 0:
-        #     for i, b in enumerate(gameboard.bullets):
+        for i, b in enumerate(gameboard.bullets):
+            # Predict next position of all bullets
+            dbout(str(i) + ":" + str(b.x) + "," + str(b.y) + "," + str(b.direction)+ "\t")
+            if (b.direction == Direction.Up):
+                avoid.append((b.y-1)%gameboard.height, b.x)
+            elif (b.direction == Direction.Down):
+                avoid.append((b.y+1)%gameboard.height, b.x)
+            elif (b.direction == Direction.Right):
+                avoid.append(b.y, (b.x+1)%gameboard.width)
+            elif (b.direction == Direction.Up):
+                avoid.append(b.y, (b.x-1)%gameboard.width)
 
         avoid.append((opponent.y, opponent.x))
-        dbout(avoid)
+        dbout("Tiles to avoid: " + str(avoid))
         return avoid
                  
     def get_shortest_path(self, player, target, avoid):
@@ -154,6 +165,8 @@ class PlayerAI:
         start = millitime()
         pu = gameboard.power_ups[0]        
 
+        dbout("Width: " + str(gameboard.width) + " Height: " + str(gameboard.height))
+
         # Initialize bot params
         if gameboard.current_turn == 0:
             self.generate_graph(gameboard)
@@ -162,6 +175,7 @@ class PlayerAI:
             dbout("Starting at: " + str(player.y) + ", " + str(player.x))
             #dbout(nx.shortest_path(self.G, (player.y, player.x), (pu.y, pu.x)))
             self.getTurretFARC(gameboard)
+            dbout("Calculated turret firing arcs")
     
         # path = self.get_shortest_path(player, pu, [(6,1)])
         path = self.get_shortest_path(player, pu, self.TilesToAvoid(gameboard, opponent))
