@@ -23,6 +23,18 @@ class PlayerAI:
         if len(path)<=6:
             return True
         return False
+        
+    def closest_power_up(self, gameboard, player):
+        paths = []
+        for ps in gameboard.power_ups:
+            paths = [self.get_shortest_path(player, ps, [])] #TO ADD - AVOID
+        mind = 1000000
+        cur_index = 0
+        for i in range(0, len(path)):
+            if len(paths[i]) < mind:
+                mind = len(paths[i])
+                cur_index = i
+        return paths[cur_index]
 
     def getTurretFARC(self, gameboard):
         # Tiles affected by turrets firing
