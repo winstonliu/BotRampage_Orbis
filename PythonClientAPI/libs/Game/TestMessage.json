@@ -1,0 +1,124 @@
+{
+    "playerID": 1,
+    "opponentID": 2,
+    "currentTurn": 63,
+    "maxTurn": 150,
+    "teleportLocations": [
+        [
+            2,
+            1
+        ],
+        [
+            2,
+            2
+        ]
+    ],
+    "player": {
+        "score": 2,
+        "HP": 2,
+        "numberOfPowerUps": {
+            "laser": 2,
+            "teleport": 1,
+            "shield": 0
+        },
+        "x": 1,
+        "y": 2,
+        "currentDirection": "UP",
+        "shieldActive": true
+    },
+    "opponent": {
+        "HP": 2,
+        "score": 5,
+        "x": 2,
+        "y": 1,
+        "numberOfPowerUps": {
+            "laser": 2,
+            "teleport": 1,
+            "shield": 0
+        },
+        "currentDirection": "DOWN",
+        "opponentLastMove": "FACE_LEFT",
+        "shieldActive": false
+    },
+
+    "wasHitByLastTurn": [
+        {
+            "type": "LASER",
+            "shooter": 2
+        },
+        {
+            "type": "BULLET",
+            "shooter": 1
+        },
+        {
+            "type": "LASER"
+        }
+    ],
+    "didMakeAMove": true,
+    "gameboard": {
+        "width": 3,
+        "height": 3,
+        "board": [
+            [
+                {
+                    "powerUp": "SHIELD"
+                },
+                {
+                    "bullets": [
+                        {
+                            "player": 2,
+                            "currentDirection": "UP"
+                        },
+                        {
+                            "player": 2,
+                            "currentDirection": "LEFT"
+                        }
+                    ],
+                    "powerUp": "TELEPORT"
+                },
+                {
+                    "bullets": [
+                        {
+                            "player": 1,
+                            "currentDirection": "UP"
+                        }
+                    ]
+                }
+            ],
+            [
+                {
+                    "wall": true
+                },
+                {
+                    "turret": {
+                        "isFiringNextTurn": false,
+                        "isDead": true,
+                        "didFire": false,
+                        "fireTime": 1,
+                        "cooldownTime": 2
+                    }
+                },
+                {
+                    "player": 1
+                }
+            ],
+            [
+                {
+                    "turret": {
+                        "isFiringNextTurn": true,
+                        "isDead": false,
+                        "didFire": true,
+                        "fireTime": 2,
+                        "cooldownTime": 4
+                    }
+                },
+                {
+
+                },
+                {
+                    "player": 2
+                }
+            ]
+        ]
+    }
+}
