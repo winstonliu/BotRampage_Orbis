@@ -19,12 +19,44 @@ class PlayerAI:
         pass
         
     def should_fire_laser(self, gameboard, player, opponent):
-        path = self.get_shortest_path(player, opponent)
-        moves = [self.movement_direction(path[i], path[i+1]) for i in range(0, len(path)-1)]
-        
-        if len(path)<4:
+        path = self.get_shortest_path(player, opponent, [])
+        if len(path)<=5:
             return True
         return False
+        
+    def closest_power_up(self, gameboard, player, avoid_list):
+        paths = []
+        for ps in gameboard.power_ups:
+            paths.append(self.get_shortest_path(player, ps,avoid_list)) #TO ADD - AVOID
+        mind = 1000000
+        cur_index = 0
+        for i in range(0, len(paths)):
+            if len(paths[i]) < mind:
+                mind = len(paths[i])
+                cur_index = i
+        return paths[cur_index]
+
+    def avoid_opponent_laser(self, gameboard, opponent):
+        avoid_list = []
+        wall_encountered = [False, False, False, False]
+        for i in range(1, 4):
+            if not wall_encountered[0] and not gameboard.is_wall_at_tile(opponent.x, (opponent.y-i)%gameboard.height):
+                avoid_list.append(((opponent.y-i)%gameboard.height, opponent.x)) # go up
+            else:
+                wall_encountered[0] = True
+            if not wall_encountered[1] and not gameboard.is_wall_at_tile(opponent.x, (opponent.y+i)%gameboard.height):
+                avoid_list.append(((opponent.y+i)%gameboard.height, opponent.x)) # down
+            else:
+                wall_encountered[1] = True
+            if not wall_encountered[2] and not gameboard.is_wall_at_tile((opponent.x+i)%gameboard.width, opponent.y):
+                avoid_list.append((opponent.y, (opponent.x+i)%gameboard.width)) #right
+            else:
+                wall_encountered[2] = True
+            if not wall_encountered[3] and not gameboard.is_wall_at_tile((opponent.x-i)%gameboard.width, opponent.y):
+                avoid_list.append((opponent.y, (opponent.x-i)%gameboard.width)) #left
+            else:
+                wall_encountered[3] = True
+        return avoid_list
 
     def getTurretFARC(self, gameboard):
         # Tiles affected by turrets firing
@@ -164,8 +196,7 @@ class PlayerAI:
         self.G = G
 
     def get_move(self, gameboard, player, opponent):
-        start = millitime()
-        pu = gameboard.power_ups[0]        
+        start = millitime()  
 
         dbout("Width: " + str(gameboard.width) + " Height: " + str(gameboard.height))
 
@@ -173,21 +204,34 @@ class PlayerAI:
         if gameboard.current_turn == 0:
             self.generate_graph(gameboard)
             dbout("graph generated!")
-            dbout("Going for: " + str(pu.y) + ", " + str(pu.x))
-            dbout("Starting at: " + str(player.y) + ", " + str(player.x))
             #dbout(nx.shortest_path(self.G, (player.y, player.x), (pu.y, pu.x)))
             self.getTurretFARC(gameboard)
             dbout("Calculated turret firing arcs")
     
+        if player.shield_count>0:
+            return Move.SHIELD
+    
+        if player.laser_count>0 and self.should_fire_laser(gameboard, player, opponent):
+            return Move.LASER
+    
         # path = self.get_shortest_path(player, pu, [(6,1)])
         try:
             avoidance_list = self.TilesToAvoid(gameboard, player, opponent)
+            if opponent.laser_count > 0:
+                avoidance_list.extend(self.avoid_opponent_laser(gameboard, opponent))
             dbout(avoidance_list)
-            path = self.get_shortest_path(player, pu, avoidance_list)
-            dbout("Path: " + str(path))
+       
+            to_avoid = []
+            while True:
+                path = self.closest_power_up(gameboard, player, to_avoid)
+                if path[1] not in avoidance_list:
+                    break
+                to_avoid.append(path[1])
+            
+            dbout(path)
         except:
             path = []
-
+        
         # Debug for printing bullet specs
         # if len(gameboard.bullets) > 0:
         #     for i, b in enumerate(gameboard.bullets):
@@ -201,8 +245,13 @@ class PlayerAI:
         # self.i = self.i+1 if self.i<len(moves)-1 else len(moves)-1
         # return moves[self.i]
 
-        if len(path) > 1:
+        dbout("Following path: ")
+        dbout(path)
+        dbout("path length:")
+        dbout(len(path))
+        if len(path)>1:
             next_move = self.movement_direction(path[0][0], path[0][1], path[1][0], path[1][1], gameboard, player)
+            dbout("Move")            
             dbout(next_move)
             return next_move
 
