@@ -75,14 +75,14 @@ class PlayerAI:
         for i, b in enumerate(gameboard.bullets):
             # Predict next position of all bullets
             dbout(str(i) + ":" + str(b.x) + "," + str(b.y) + "," + str(b.direction)+ "\t")
-            if (b.direction == Direction.Up):
-                avoid.append((b.y-1)%gameboard.height, b.x)
-            elif (b.direction == Direction.Down):
-                avoid.append((b.y+1)%gameboard.height, b.x)
-            elif (b.direction == Direction.Right):
-                avoid.append(b.y, (b.x+1)%gameboard.width)
-            elif (b.direction == Direction.Up):
-                avoid.append(b.y, (b.x-1)%gameboard.width)
+            if (b.direction == Direction.UP):
+                avoid.append(((b.y-1)%gameboard.height, b.x))
+            elif (b.direction == Direction.DOWN):
+                avoid.append(((b.y+1)%gameboard.height, b.x))
+            elif (b.direction == Direction.RIGHT):
+                avoid.append((b.y, (b.x+1)%gameboard.width))
+            elif (b.direction == Direction.LEFT):
+                avoid.append((b.y, (b.x-1)%gameboard.width))
 
         avoid.append((opponent.y, opponent.x))
         dbout("Tiles to avoid: " + str(avoid))
@@ -178,7 +178,9 @@ class PlayerAI:
             dbout("Calculated turret firing arcs")
     
         # path = self.get_shortest_path(player, pu, [(6,1)])
-        path = self.get_shortest_path(player, pu, self.TilesToAvoid(gameboard, opponent))
+        avoidance_list = self.TilesToAvoid(gameboard, opponent)
+        dbout(avoidance_list)
+        path = self.get_shortest_path(player, pu, avoidance_list)
         dbout(path)
 
         # Debug for printing bullet specs
