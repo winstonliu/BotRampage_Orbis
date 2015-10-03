@@ -20,9 +20,7 @@ class PlayerAI:
         
     def should_fire_laser(self, gameboard, player, opponent):
         path = self.get_shortest_path(player, opponent)
-        moves = [self.movement_direction(path[i], path[i+1]) for i in range(0, len(path)-1)]
-        
-        if len(path)<4:
+        if len(path)<=6:
             return True
         return False
 
