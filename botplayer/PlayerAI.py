@@ -24,13 +24,10 @@ class PlayerAI:
             return True
         return False
         
-    def closest_power_up(self, gameboard, player):
+    def closest_power_up(self, gameboard, player, avoid_list):
         paths = []
         for ps in gameboard.power_ups:
-            paths.append(self.get_shortest_path(player, ps, [])) #TO ADD - AVOID
-        print("powerup paths:")
-        for path in paths:
-            print(path)
+            paths.append(self.get_shortest_path(player, ps,avoid_list)) #TO ADD - AVOID
         mind = 1000000
         cur_index = 0
         for i in range(0, len(paths)):
@@ -39,7 +36,7 @@ class PlayerAI:
                 cur_index = i
         return paths[cur_index]
 
-    def avoid_opponent_laser(self, gameboard, player, opponent):
+    def avoid_opponent_laser(self, gameboard, opponent):
         avoid_list = []
         wall_encountered = [False, False, False, False]
         for i in range(1, 4):
@@ -72,13 +69,13 @@ class PlayerAI:
             dbout("Checking turret: " + str(b.x) + " " + str(b.y))
             for i in range(1,5):
                 # Check in each of the four cardinal directions
-                if (not gameboard.is_wall_at_tile(b.x, (b.y+i)%gameboard.width) and not hasWall[0]):
-                    d.append((b.x, (b.y+i)%gameboard.width)) 
+                if (not gameboard.is_wall_at_tile(b.x, (b.y+i)%gameboard.height) and not hasWall[0]):
+                    d.append((b.x, (b.y+i)%gameboard.height)) 
                 else: 
                     hasWall[0]=True
 
-                if (not gameboard.is_wall_at_tile(b.x, (b.y-i)%gameboard.width) and not hasWall[1]):
-                    d.append((b.x, (b.y-i)%gameboard.width)) 
+                if (not gameboard.is_wall_at_tile(b.x, (b.y-i)%gameboard.height) and not hasWall[1]):
+                    d.append((b.x, (b.y-i)%gameboard.height)) 
                 else:
                     hasWall[1]=True
 
@@ -99,17 +96,28 @@ class PlayerAI:
         avoid = []
 
         # Check for incoming turret fire
-        if len(gameboard.turrets) > 0:
-            for i, b in enumerate(gameboard.turrets):
-                if b.is_firing_next_turn:
-                    avoid += (self.tr_firingarc[i][1], self.tr_firingarc[i][0]) # Convert to (y,x)
+        for i, b in enumerate(gameboard.turrets):
+            if b.is_firing_next_turn:
+                avoid += [(k[1], k[0]) for k in self.tr_firingarc[i]] # Convert to (y,x)
+
+        dbout("Turret tiles: " + str(self.tr_firingarc))
+        dbout("Turret tiles: " + str(avoid))
 
         # Check for incoming bullets
-        # if len(gameboard.bullets) > 0:
-        #     for i, b in enumerate(gameboard.bullets):
+        for i, b in enumerate(gameboard.bullets):
+            # Predict next position of all bullets
+            dbout(str(i) + ":" + str(b.x) + "," + str(b.y) + "," + str(b.direction)+ "\t")
+            if (b.direction == Direction.UP):
+                avoid.append(((b.y-1)%gameboard.height, b.x))
+            elif (b.direction == Direction.DOWN):
+                avoid.append(((b.y+1)%gameboard.height, b.x))
+            elif (b.direction == Direction.RIGHT):
+                avoid.append((b.y, (b.x+1)%gameboard.width))
+            elif (b.direction == Direction.LEFT):
+                avoid.append((b.y, (b.x-1)%gameboard.width))
 
         avoid.append((opponent.y, opponent.x))
-        dbout(avoid)
+        dbout("Tiles to avoid: " + str(avoid))
         return avoid
                  
     def get_shortest_path(self, player, target, avoid):
@@ -188,12 +196,15 @@ class PlayerAI:
     def get_move(self, gameboard, player, opponent):
         start = millitime()  
 
+        dbout("Width: " + str(gameboard.width) + " Height: " + str(gameboard.height))
+
         # Initialize bot params
         if gameboard.current_turn == 0:
             self.generate_graph(gameboard)
             dbout("graph generated!")
             #dbout(nx.shortest_path(self.G, (player.y, player.x), (pu.y, pu.x)))
             self.getTurretFARC(gameboard)
+            dbout("Calculated turret firing arcs")
     
         if player.shield_count>0:
             return Move.SHIELD
@@ -202,7 +213,20 @@ class PlayerAI:
             return Move.LASER
     
         # path = self.get_shortest_path(player, pu, [(6,1)])
-        path = self.closest_power_up(gameboard, player)
+
+        avoidance_list = self.TilesToAvoid(gameboard, opponent)
+        if opponent.laser_count > 0:
+            avoidance_list.extend(self.avoid_opponent_laser(gameboard, opponent))
+        dbout(avoidance_list)
+        
+        to_avoid = []
+        while True:
+            path = self.closest_power_up(gameboard, player, to_avoid)
+            if path[1] not in avoidance_list:
+                break
+            to_avoid.append(path[1])
+            
+        dbout(path)
 
         # Debug for printing bullet specs
         # if len(gameboard.bullets) > 0:
