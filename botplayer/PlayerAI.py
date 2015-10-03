@@ -14,7 +14,7 @@ def dbout(a):
 class PlayerAI:
     def __init__(self):
         # Initialize any objects or variables you need here.
-        self.tr_firingarc = [] # Turrets, firing arc
+        self.tr_firingarc = [] # Turrets, firing arc (x,y)
         self.i = -1;
         pass
         
@@ -38,7 +38,7 @@ class PlayerAI:
 
     def getTurretFARC(self, gameboard):
         # Tiles affected by turrets firing
-        # Calculates a list of lists
+        # Calculates a list of lists (y,x)
         
         for b in gameboard.turrets:
             # Firing range of turret
@@ -48,46 +48,48 @@ class PlayerAI:
             for i in range(1,5):
                 # Check in each of the four cardinal directions
                 if (not gameboard.is_wall_at_tile(b.x, (b.y+i)%gameboard.width) and not hasWall[0]):
-                    d.append((b.x, b.y+i)) 
+                    d.append((b.x, (b.y+i)%gameboard.width)) 
                 else: 
                     hasWall[0]=True
 
                 if (not gameboard.is_wall_at_tile(b.x, (b.y-i)%gameboard.width) and not hasWall[1]):
-                    d.append((b.x, b.y-i)) 
+                    d.append((b.x, (b.y-i)%gameboard.width)) 
                 else:
                     hasWall[1]=True
 
                 if (not gameboard.is_wall_at_tile((b.x+i)%gameboard.width, b.y) and not hasWall[2]):
-                    d.append((b.x+i, b.y)) 
+                    d.append(((b.x+i)%gameboard.width, b.y)) 
                 else:
                     hasWall[2]=True
 
                 if (not gameboard.is_wall_at_tile((b.x-i)%gameboard.width, b.y) and not hasWall[3]):
-                    d.append((b.x-i, b.y)) 
+                    d.append(((b.x-i)%gameboard.width, b.y)) 
                 else:
                     hasWall[3]=True
             self.tr_firingarc.append(d)
 
-    def isDangerousTile(self, gameboard, tile):
+    def TilesToAvoid(self, gameboard, opponent):
         # Checks if a tile is dangerous, given that tile argument is 
         # dictionary of form {"x":x, "y":y}
+        avoid = []
 
         # Check for incoming turret fire
         if len(gameboard.turrets) > 0:
             for i, b in enumerate(gameboard.turrets):
-                if (b.x == tile.x or b.y == tile.y) and b.is_firing_next_turn and (tile.x, tile.y) in self.tr_firingarc[i]:
-                    return False
+                if b.is_firing_next_turn:
+                    avoid += (self.tr_firingarc[i][1], self.tr_firingarc[i][0]) # Convert to (y,x)
 
         # Check for incoming bullets
         # if len(gameboard.bullets) > 0:
         #     for i, b in enumerate(gameboard.bullets):
-        #         
 
-        return True
-
+        avoid.append((opponent.y, opponent.x))
+        dbout(avoid)
+        return avoid
+                 
     def get_shortest_path(self, player, target, avoid):
         """
-            avoid ([nodes]): nodes to temporarily avoid
+            avoid ([nodes]): nodes to temporarily avoid, (y,x)
         """
         temp_edge_storage = []
         for node in avoid:
@@ -160,7 +162,7 @@ class PlayerAI:
 
     def get_move(self, gameboard, player, opponent):
         start = millitime()
-        pu = gameboard.power_ups[1]        
+        pu = gameboard.power_ups[0]        
 
         # Initialize bot params
         if gameboard.current_turn == 0:
@@ -171,7 +173,8 @@ class PlayerAI:
             #dbout(nx.shortest_path(self.G, (player.y, player.x), (pu.y, pu.x)))
             self.getTurretFARC(gameboard)
     
-        path = self.get_shortest_path(player, pu, [(6,1)])
+        # path = self.get_shortest_path(player, pu, [(6,1)])
+        path = self.get_shortest_path(player, pu, self.TilesToAvoid(gameboard, opponent))
         dbout(path)
 
         # Debug for printing bullet specs
