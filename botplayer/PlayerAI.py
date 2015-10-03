@@ -17,6 +17,14 @@ class PlayerAI:
         self.tr_firingarc = [] # Turrets, firing arc (x,y)
         self.i = -1;
         pass
+        
+    def should_fire_laser(self, gameboard, player, opponent):
+        path = self.get_shortest_path(player, opponent)
+        moves = [self.movement_direction(path[i], path[i+1]) for i in range(0, len(path)-1)]
+        
+        if len(path)<4:
+            return True
+        return False
 
     def getTurretFARC(self, gameboard):
         # Tiles affected by turrets firing
