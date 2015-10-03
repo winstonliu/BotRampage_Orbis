@@ -38,27 +38,27 @@ class PlayerAI:
             for i in range(1,5):
                 # Check in each of the four cardinal directions
                 if (not gameboard.is_wall_at_tile(b.x, (b.y+i)%gameboard.height) and not hasWall[0]):
-                    d.append((b.x, (b.y+i)%gameboard.height)) 
+                    d.append((b.x, (b.y+i)%gameboard.height))
                 else: 
                     hasWall[0]=True
 
                 if (not gameboard.is_wall_at_tile(b.x, (b.y-i)%gameboard.height) and not hasWall[1]):
-                    d.append((b.x, (b.y-i)%gameboard.height)) 
+                    d.append((b.x, (b.y-i)%gameboard.height))
                 else:
                     hasWall[1]=True
 
                 if (not gameboard.is_wall_at_tile((b.x+i)%gameboard.width, b.y) and not hasWall[2]):
-                    d.append(((b.x+i)%gameboard.width, b.y)) 
+                    d.append(((b.x+i)%gameboard.width, b.y))
                 else:
                     hasWall[2]=True
 
                 if (not gameboard.is_wall_at_tile((b.x-i)%gameboard.width, b.y) and not hasWall[3]):
-                    d.append(((b.x-i)%gameboard.width, b.y)) 
+                    d.append(((b.x-i)%gameboard.width, b.y))
                 else:
                     hasWall[3]=True
             self.tr_firingarc.append(d)
 
-    def TilesToAvoid(self, gameboard, opponent):
+    def TilesToAvoid(self, gameboard, player, opponent):
         # Checks if a tile is dangerous, given that tile argument is 
         # dictionary of form {"x":x, "y":y}
         avoid = []
@@ -68,7 +68,6 @@ class PlayerAI:
             if b.is_firing_next_turn:
                 avoid += [(k[1], k[0]) for k in self.tr_firingarc[i]] # Convert to (y,x)
 
-        dbout("Turret tiles: " + str(self.tr_firingarc))
         dbout("Turret tiles: " + str(avoid))
 
         # Check for incoming bullets
@@ -85,6 +84,9 @@ class PlayerAI:
                 avoid.append((b.y, (b.x-1)%gameboard.width))
 
         avoid.append((opponent.y, opponent.x))
+        if (player.y, player.x) in avoid:
+            del avoid[avoid.index((player.y, player.x))]
+
         dbout("Tiles to avoid: " + str(avoid))
         return avoid
                  
@@ -94,7 +96,7 @@ class PlayerAI:
         """
         temp_edge_storage = []
         for node in avoid:
-            neighbors = list(nx.all_neighbors(self.G, node))         
+            neighbors = list(nx.all_neighbors(self.G, node))
             for neighbor in neighbors:
                 self.G.remove_edge(node, neighbor)
             temp_edge_storage = [(node, neighbor) for neighbor in neighbors]
@@ -178,10 +180,13 @@ class PlayerAI:
             dbout("Calculated turret firing arcs")
     
         # path = self.get_shortest_path(player, pu, [(6,1)])
-        avoidance_list = self.TilesToAvoid(gameboard, opponent)
-        dbout(avoidance_list)
-        path = self.get_shortest_path(player, pu, avoidance_list)
-        dbout(path)
+        try:
+            avoidance_list = self.TilesToAvoid(gameboard, player, opponent)
+            dbout(avoidance_list)
+            path = self.get_shortest_path(player, pu, avoidance_list)
+            dbout("Path: " + str(path))
+        except:
+            path = []
 
         # Debug for printing bullet specs
         # if len(gameboard.bullets) > 0:
@@ -196,7 +201,7 @@ class PlayerAI:
         # self.i = self.i+1 if self.i<len(moves)-1 else len(moves)-1
         # return moves[self.i]
 
-        if len(path)>1:
+        if len(path) > 1:
             next_move = self.movement_direction(path[0][0], path[0][1], path[1][0], path[1][1], gameboard, player)
             dbout(next_move)
             return next_move
