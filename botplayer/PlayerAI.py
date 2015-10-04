@@ -229,7 +229,7 @@ class PlayerAI:
             return True
         return False
         
-    def num_moves_to_execute_path(self, path, player):
+    def num_moves_to_execute_path(self, path, gameboard, player):
         num_moves = 0
         for i in range(0, len(path)-1):
             mmove = self.movement_direction(path[i::], gameboard, player)
@@ -238,7 +238,7 @@ class PlayerAI:
             else:
                 num_moves = num_moves+2 # requires rotation and movement
         return num_moves
-            
+    
     def get_move(self, gameboard, player, opponent):
         start = millitime()  
 
