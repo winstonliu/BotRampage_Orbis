@@ -2,6 +2,7 @@ import time
 
 from PythonClientAPI.libs.Game.Enums import *
 from PythonClientAPI.libs.Game.MapOutOfBoundsException import *
+from TurretHunter import TurretHunter
 from networkx import nx
 
 millitime = lambda: int(round(time.time() * 1000))
@@ -18,8 +19,8 @@ def turretFARC(a):
 class PlayerAI:
     def __init__(self):
         # Initialize any objects or variables you need here.
-        self.tr_firingarc = [] # Turrets, firing arcs [(x,y)]
         self.i = -1;
+        self.dieTurrets = None
         pass
         
     def should_fire_laser(self, gameboard, player, opponent):
@@ -39,6 +40,13 @@ class PlayerAI:
                 mind = len(paths[i])
                 cur_index = i
         return paths[cur_index]
+
+    def opponent_is_in_los(self, gameboard, player, opponent):
+        if opponent.x==player.x or opponent.y==player.y:
+            path = self.get_shortest_path(player, opponent, [])
+            if self.is_direct_path(path):
+                return True, path
+        return False, []
 
     def avoid_opponent_laser(self, gameboard, opponent):
         avoid_list = []
@@ -71,9 +79,9 @@ class PlayerAI:
         # Check for incoming turret fire
         for i, b in enumerate(gameboard.turrets):
             if b.is_firing_next_turn:
-                avoid += [(k[1], k[0]) for k in self.tr_firingarc[i]] # Convert to (y,x)
+                avoid += self.dieTurrets.getTurretFARCinYX(i)# Convert to (y,x)
 
-        turretFARC("Turret tiles: " + str(avoid))
+        # turretFARC("Turret tiles: " + str(avoid))
 
         # Check for incoming bullets
         for i, b in enumerate(gameboard.bullets):
@@ -96,17 +104,6 @@ class PlayerAI:
             avoid ([nodes]): nodes to temporarily avoid, (y,x)
         """
         temp_edge_storage = []
-        if (target.y, target.x) in self.G.nodes():
-            dbout("TARGET NODE EXISTS:")
-            dbout(str(target.y) + "," + str(target.x))
-        else:
-            dbout("TARGET NODE DOES NOT EXIST")
-            dbout(str(target.y) + "," + str(target.x))
-
-        if (player.y, player.x) in self.G.nodes():
-            dbout("PLAYER NODE EXISTS")
-        else:
-            dbout("PLAYER NODE DOES NOT EXIST")
         dbout("AVOID LIST:")
         dbout(avoid)
         temp_edge_storage = []
@@ -120,16 +117,17 @@ class PlayerAI:
             path = nx.shortest_path(self.G, (player.y, player.x), (target.y, target.x))
         except:
             print("EXCEPTION: UNABLE TO FIND SHORTEST PATH")
-
-        dbout("Restoring edges:")
-        dbout(temp_edge_storage)        
         for edge in temp_edge_storage:
             self.G.add_edge(edge[0], edge[1])
         dbout("PATH FROM PLAYER TO TARGET GIVEN AVOID LIST:")
         dbout(path)
         return path
 
-    def movement_direction(self, y1, x1, y2, x2, gameboard, player):
+    def movement_direction(self, path, gameboard, player):
+        y1 = path[0][0]        
+        x1 = path[0][1]
+        y2 = path[1][0]
+        x2 = path[1][1]
         cur_direction = player.direction
         if y1==y2:
             if (x2<x1 and not (x1==gameboard.width-1 and x2==0)) or (x1==0 and x2==gameboard.width-1):
@@ -186,9 +184,21 @@ class PlayerAI:
         for turret in gb.turrets:
             G.remove_node((turret.y, turret.x))
         self.G = G
+        
+    def is_direct_path(self, path):
+        sety = set([node[0] for node in path])
+        if len(sety)==1:
+            return True
+        setx = set([node[1] for node in path])
+        if len(setx)==1:
+            return True
+        return False
 
     def get_move(self, gameboard, player, opponent):
         start = millitime()  
+
+        self.dieTurrets = TurretHunter()
+
         turretFARC("##### Turn: " + str(gameboard.current_turn) + " #####")
         dbout("")
         dbout("")
@@ -197,8 +207,21 @@ class PlayerAI:
             self.generate_graph(gameboard)
             dbout("graph generated!")
             #dbout(nx.shortest_path(self.G, (player.y, player.x), (pu.y, pu.x)))
-            self.tr_firingarc = self.getTurretFARC(gameboard)
+            self.dieTurrets.getTurretFARC(gameboard)
             dbout("Calculated turret firing arcs")
+
+
+
+        los, path = self.opponent_is_in_los(gameboard, player, opponent)
+        if los==True:
+            print("ENEMY IN LOS")
+            mmove = self.movement_direction(path, gameboard, player)
+            if mmove == Move.FORWARD:
+                return Move.SHOOT
+            else:
+                return mmove
+        else:
+            print("ENEMY NOT IN LOS")
     
         # if player.shield_count>0:
         #     return Move.SHIELD
@@ -243,15 +266,11 @@ class PlayerAI:
         # self.i = self.i+1 if self.i<len(moves)-1 else len(moves)-1
         # return moves[self.i]
 
-        # if (player.y, player.x) in avoid:
-        #     del avoid[avoid.index((player.y, player.x))]
         
         dbout("Attempting to Follow path: ")
         dbout(path)
         if len(path)>1:
-            next_move = self.movement_direction(path[0][0], path[0][1], path[1][0], path[1][1], gameboard, player)
-            dbout("Move")            
-            dbout(next_move)
+            next_move = self.movement_direction(path, gameboard, player)
             return next_move
 
         return Move.NONE
