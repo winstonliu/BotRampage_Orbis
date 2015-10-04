@@ -120,6 +120,32 @@ class PlayerAI:
         dbout("PATH FROM PLAYER TO TARGET GIVEN AVOID LIST:")
         dbout(path)
         return path
+        
+    def single_source_shortest_path(self, player, avoid):
+        """
+            avoid ([nodes]): nodes to temporarily avoid, (y,x)
+        """
+        temp_edge_storage = []
+        dbout("AVOID LIST:")
+        dbout(avoid)
+        temp_edge_storage = []
+        path = []
+        for node in avoid:
+            neighbors = list(nx.all_neighbors(self.G, node))
+            for neighbor in neighbors:
+                self.G.remove_edge(node, neighbor)
+            temp_edge_storage.extend([(node, neighbor) for neighbor in neighbors])
+        try:
+            paths = nx.single_source_shortest_path(self.G, (player.y, player.x), cutoff=5)
+            del paths[0]
+            paths = list(paths.values())
+        except:
+            dbout("EXCEPTION: UNABLE TO FIND SHORTEST PATH")
+        for edge in temp_edge_storage:
+            self.G.add_edge(edge[0], edge[1])
+        dbout("PATH FROM PLAYER TO TARGET GIVEN AVOID LIST:")
+        dbout(path)
+        return paths
 
     def movement_direction(self, path, gameboard, player):
         y1 = path[0][0]        
@@ -237,6 +263,12 @@ class PlayerAI:
             else:
                 num_moves = num_moves+2 # requires rotation and movement
         return num_moves
+    
+    def path_to_next_safest_spot(self, gameboard, player, opponent, avoid):
+        paths = self.single_source_shortest_path(player, avoid)
+        del paths[0] # the node we are at
+        path_lengths = [self.num_moves_to_execute_path(path, gameboard, player) for path in paths]
+        return paths[self.argmin(path_lengths)]
     
     def get_move(self, gameboard, player, opponent):
         start = millitime()  
