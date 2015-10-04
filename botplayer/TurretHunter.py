@@ -60,3 +60,6 @@ class TurretHunter:
                 for k in self.turret_info[i]["FARC"]:
                     avoid.append((k[1], k[0]))
         return avoid
+    
+    def huntTurrets(self, gameboard):
+        pass

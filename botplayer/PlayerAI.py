@@ -49,26 +49,38 @@ class PlayerAI:
                 return True, path
         return False, []
 
-    def avoid_opponent_laser(self, gameboard, opponent):
+    def avoid_opponent_fire(self, gameboard, opponent):
         avoid_list = []
-        wall_encountered = [False, False, False, False]
+        isWall = [False, False, False, False]
         for i in range(1, 4):
-            if not wall_encountered[0] and not gameboard.is_wall_at_tile(opponent.x, (opponent.y-i)%gameboard.height):
-                avoid_list.append(((opponent.y-i)%gameboard.height, opponent.x)) # go up
+            if not isWall[0] and not gameboard.is_wall_at_tile(opponent.x, (opponent.y-i)%gameboard.height):
+                if opponent.laser_count > 0:
+                    avoid_list.append(((opponent.y-i)%gameboard.height, opponent.x)) # go up
+                if opponent.direction == Direction.UP and i < 3:
+                    avoid_list.append(((opponent.y-i)%gameboard.height, opponent.x)) # go up
             else:
-                wall_encountered[0] = True
-            if not wall_encountered[1] and not gameboard.is_wall_at_tile(opponent.x, (opponent.y+i)%gameboard.height):
-                avoid_list.append(((opponent.y+i)%gameboard.height, opponent.x)) # down
+                isWall[0] = True
+            if not isWall[1] and not gameboard.is_wall_at_tile(opponent.x, (opponent.y+i)%gameboard.height):
+                if opponent.laser_count > 0: 
+                    avoid_list.append(((opponent.y+i)%gameboard.height, opponent.x)) # down
+                if opponent.direction == Direction.DOWN and i < 3:
+                    avoid_list.append(((opponent.y+i)%gameboard.height, opponent.x)) # down
             else:
-                wall_encountered[1] = True
-            if not wall_encountered[2] and not gameboard.is_wall_at_tile((opponent.x+i)%gameboard.width, opponent.y):
-                avoid_list.append((opponent.y, (opponent.x+i)%gameboard.width)) #right
+                isWall[1] = True
+            if not isWall[2] and not gameboard.is_wall_at_tile((opponent.x+i)%gameboard.width, opponent.y):
+                if opponent.laser_count > 0: 
+                    avoid_list.append((opponent.y, (opponent.x+i)%gameboard.width)) #right
+                if opponent.direction == Direction.RIGHT and i < 3:
+                    avoid_list.append((opponent.y, (opponent.x+i)%gameboard.width)) #right
             else:
-                wall_encountered[2] = True
-            if not wall_encountered[3] and not gameboard.is_wall_at_tile((opponent.x-i)%gameboard.width, opponent.y):
-                avoid_list.append((opponent.y, (opponent.x-i)%gameboard.width)) #left
+                isWall[2] = True
+            if not isWall[3] and not gameboard.is_wall_at_tile((opponent.x-i)%gameboard.width, opponent.y):
+                if opponent.laser_count > 0: 
+                    avoid_list.append((opponent.y, (opponent.x-i)%gameboard.width)) #left
+                if opponent.direction == Direction.LEFT and i < 3:
+                    avoid_list.append((opponent.y, (opponent.x-i)%gameboard.width)) #left
             else:
-                wall_encountered[3] = True
+                isWall[3] = True
         return avoid_list
 
     def TilesToAvoid(self, gameboard, player, opponent):
@@ -311,8 +323,7 @@ class PlayerAI:
         path = []        
         avoidance_list = self.TilesToAvoid(gameboard, player, opponent)
         try:
-            if opponent.laser_count > 0:
-                avoidance_list.extend(self.avoid_opponent_laser(gameboard, opponent))
+            avoidance_list.extend(self.avoid_opponent_fire(gameboard, opponent))
             dbout(avoidance_list)
 
             if (player.y, player.x) in avoidance_list and player.shield_count > 0:
@@ -332,9 +343,9 @@ class PlayerAI:
             dbout("EXCEPTION: UNABLE TO FIND PATH")
             dbout(self.G.edges())
             path = []
-            if (player.y, player.x) in avoidance_list and player.shield_count > 0:
+            if ((player.y, player.x) in avoidance_list and player.shield_count > 0 and 
+                    self.movement_direction(path, gameboard, player) != Move.FORWARD):
                 return Move.SHIELD
-       
         
         # Debug for printing bullet specs
         # if len(gameboard.bullets) > 0:
