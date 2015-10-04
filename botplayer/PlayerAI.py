@@ -334,7 +334,6 @@ class PlayerAI:
     
         # path = self.get_shortest_path(player, pu, [(6,1)])
         path = []        
-        avoid_list = self.TilesToAvoid(gameboard, player, opponent)
         try:
             if opponent.laser_count > 0:
                 avoid_list.extend(self.avoid_opponent_laser(gameboard, opponent))
