@@ -71,7 +71,6 @@ class PlayerAI:
                 wall_encountered[3] = True
         return avoid_list
 
-
     def TilesToAvoid(self, gameboard, player, opponent):
         # Checks if a tile is dangerous, given that tile argument is 
         # dictionary of form {"x":x, "y":y}
@@ -202,7 +201,7 @@ class PlayerAI:
                 minindex = i
         return minindex
     
-    def path_to_enemy(self, gameboard, player, opponent):
+    def path_to_enemy(self, gameboard, player, opponent, avoid):
         end_nodes = list(nx.all_neighbors(self.G, (opponent.y, opponent.x)))
         opp_front_node = None
         if opponent.direction == Direction.UP:
@@ -218,7 +217,7 @@ class PlayerAI:
         dbout((player.y, player.x))
         for end_node in end_nodes:
             dbout(end_node)
-        paths = [self.get_shortest_path(player, GameObject(end_node[1], end_node[0]), []) for end_node in end_nodes]
+        paths = [self.get_shortest_path(player, GameObject(end_node[1], end_node[0]), avoid) for end_node in end_nodes]
         if len(paths)==0:
             return []
         return paths[self.argmin([len(path) for path in paths])]        
@@ -271,7 +270,11 @@ class PlayerAI:
        
             to_avoid = []
             while True:
-                path = self.closest_power_up(gameboard, player, to_avoid)
+                if len(gameboard.power_ups) > 0:
+                    path = self.closest_power_up(gameboard, player, to_avoid)
+                else:
+                    path = self.path_to_enemy(gameboard, player, opponent, to_avoid)
+
                 if path[1] not in avoidance_list:
                     break
                 to_avoid.append(path[1])

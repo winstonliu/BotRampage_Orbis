@@ -1,4 +1,5 @@
 from PythonClientAPI.libs.Game.Enums import *
+from PythonClientAPI.libs.Game.GameObjects import GameObject
 from PythonClientAPI.libs.Game.MapOutOfBoundsException import *
 
 def dbout(a):
