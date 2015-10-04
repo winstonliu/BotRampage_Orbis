@@ -310,13 +310,20 @@ class PlayerAI:
         if player.laser_count>0 and self.should_fire_laser(gameboard, player, opponent):
              return Move.LASER
 
-        # Winston, add turrets etc to this avoid list
         avoid_list = self.avoid_opponent_fire(gameboard, opponent)
         avoid_list += self.TilesToAvoid(gameboard, player, opponent)
         if (player.y, player.x) in avoid_list:
             path, nmoves = self.path_to_next_safest_spot(gameboard, player, opponent, avoid_list)
             if nmoves == 1:
-                return self.movement_direction(path, gameboard, player)
+                try: 
+                    return self.movement_direction(path, gameboard, player)
+                except:
+                    pass
+            else:
+                if player.shield_count > 0:
+                   return Move.SHIELD
+                elif player.teleport_count > 0:
+                   return Move.TELEPORT
         else:
             pass
         
@@ -327,16 +334,11 @@ class PlayerAI:
                 return Move.SHOOT
             return mmove
             
-        path = []        
+        path = self.path_to_enemy(gameboard, player, opponent, avoid_list)        
         try:
             if opponent.laser_count > 0:
                 avoid_list.extend(self.avoid_opponent_laser(gameboard, opponent))
             dbout(avoid_list)
-
-            if (player.y, player.x) in avoid_list and player.shield_count > 0:
-               return Move.SHIELD
-            elif player.teleport_count > 0:
-               return Move.TELEPORT
 
             to_avoid = []
             while True:
