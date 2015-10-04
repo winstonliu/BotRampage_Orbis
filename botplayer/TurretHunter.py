@@ -1,6 +1,11 @@
 from PythonClientAPI.libs.Game.Enums import *
 from PythonClientAPI.libs.Game.MapOutOfBoundsException import *
 
+def dbout(a):
+    # Debug dboutout
+    # dbout(a)
+    pass
+
 class TurretHunter:
     def __init__(self):
         self.turret_mappings = {}
@@ -31,7 +36,7 @@ class TurretHunter:
                     d.append(((b.x-i)%gameboard.width, b.y))
                 else:
                     hasWall[3]=True
-            print("Key: " + str(j))
+            dbout("Key: " + str(j))
             self.turret_info[j] = {"FARC" : d, "MAP" : {}}
         self.updateTurretMappings() 
 
@@ -48,9 +53,9 @@ class TurretHunter:
     def buildAvoidanceListYX(self, gameboard):
         avoid = []
         for i, b in enumerate(gameboard.turrets):
-            print(str(i) + " index " + str(b.is_firing_next_turn))
+            dbout(str(i) + " index " + str(b.is_firing_next_turn))
             if b.is_firing_next_turn:
-                print(self.turret_info[i]["FARC"])
+                dbout(self.turret_info[i]["FARC"])
                 for k in self.turret_info[i]["FARC"]:
                     avoid.append((k[1], k[0]))
         return avoid

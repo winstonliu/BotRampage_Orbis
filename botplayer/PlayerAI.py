@@ -14,7 +14,7 @@ def dbout(a):
     pass
 
 def turretFARC(a):
-    print(a)
+    # print(a)
     pass
 
 class PlayerAI:
@@ -115,7 +115,7 @@ class PlayerAI:
         try:
             path = nx.shortest_path(self.G, (player.y, player.x), (target.y, target.x))
         except:
-            print("EXCEPTION: UNABLE TO FIND SHORTEST PATH")
+            dbout("EXCEPTION: UNABLE TO FIND SHORTEST PATH")
         for edge in temp_edge_storage:
             self.G.add_edge(edge[0], edge[1])
         dbout("PATH FROM PLAYER TO TARGET GIVEN AVOID LIST:")
@@ -215,9 +215,9 @@ class PlayerAI:
             opp_front_node = (opponent.y, opponent.x-1)
         if opp_front_node in end_nodes:
             end_nodes.remove(opp_front_node)
-        print((player.y, player.x))
+        dbout((player.y, player.x))
         for end_node in end_nodes:
-            print(end_node)
+            dbout(end_node)
         paths = [self.get_shortest_path(player, GameObject(end_node[1], end_node[0]), []) for end_node in end_nodes]
         if len(paths)==0:
             return []
@@ -243,14 +243,14 @@ class PlayerAI:
 
         los, path = self.opponent_is_in_los(gameboard, player, opponent)
         if los==True:
-            print("ENEMY IN LOS")
+            dbout("ENEMY IN LOS")
             mmove = self.movement_direction(path, gameboard, player)
             if mmove == Move.FORWARD:
                 return Move.SHOOT
             else:
                 return mmove
         else:
-            print("ENEMY NOT IN LOS")
+            dbout("ENEMY NOT IN LOS")
     
         # if player.shield_count>0:
         #     return Move.SHIELD
@@ -276,7 +276,7 @@ class PlayerAI:
                     break
                 to_avoid.append(path[1])
         except:
-            print("EXCEPTION: UNABLE TO FIND PATH")
+            dbout("EXCEPTION: UNABLE TO FIND PATH")
             dbout(self.G.edges())
             path = []
             if (player.y, player.x) in avoidance_list and player.shield_count > 0:
