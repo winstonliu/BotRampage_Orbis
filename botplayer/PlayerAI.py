@@ -222,6 +222,22 @@ class PlayerAI:
             return []
         return paths[self.argmin([len(path) for path in paths])]        
         
+    def enemy_is_pointed_toward_us(self, gameboard, opponent, path_to_opponent):
+        mmove = self.movement_direction(list(reversed(path_to_opponent)), gameboard, opponent)
+        if mmove == Move.FORWARD:
+            return True
+        return False
+        
+    def num_moves_to_execute_path(self, path, gameboard, player):
+        num_moves = 0
+        for i in range(0, len(path)-1):
+            mmove = self.movement_direction(path[i::], gameboard, player)
+            if mmove==Move.FORWARD:
+                num_moves = num_moves+1
+            else:
+                num_moves = num_moves+2 # requires rotation and movement
+        return num_moves
+    
     def get_move(self, gameboard, player, opponent):
         start = millitime()  
 
@@ -240,22 +256,24 @@ class PlayerAI:
         # Update turret list to check for dead turrets
         self.dieTurrets.updateTurretList(gameboard)
 
+        if player.laser_count>0 and self.should_fire_laser(gameboard, player, opponent):
+            return Move.LASER
+
         los, path = self.opponent_is_in_los(gameboard, player, opponent)
         if los==True:
             dbout("ENEMY IN LOS")
             mmove = self.movement_direction(path, gameboard, player)
-            if mmove == Move.FORWARD:
+            if mmove == Move.FORWARD: # we are pointed toward the enemy
                 return Move.SHOOT
-            else:
-                return mmove
+            else: # we are not pointed toward the enemy
+                if not self.enemy_is_pointed_toward_us(gameboard, opponent, path):                
+                    return mmove
         else:
             dbout("ENEMY NOT IN LOS")
     
         # if player.shield_count>0:
         #     return Move.SHIELD
     
-        if player.laser_count>0 and self.should_fire_laser(gameboard, player, opponent):
-            return Move.LASER
     
         # path = self.get_shortest_path(player, pu, [(6,1)])
         path = []        
