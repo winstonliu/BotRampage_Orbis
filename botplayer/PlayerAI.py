@@ -1,6 +1,7 @@
 import time
 
 from PythonClientAPI.libs.Game.Enums import *
+from PythonClientAPI.libs.Game.GameObjects import GameObject
 from PythonClientAPI.libs.Game.MapOutOfBoundsException import *
 from TurretHunter import TurretHunter
 from networkx import nx
@@ -191,7 +192,37 @@ class PlayerAI:
         if len(setx)==1:
             return True
         return False
-
+        
+    def argmin(self, mlist):
+        minval = mlist[0]
+        minindex = 0
+        for i in range(1, len(mlist)):
+            if mlist[i] < minval:
+                minval = mlist[i]
+                minindex = i
+        return minindex
+    
+    def path_to_enemy(self, gameboard, player, opponent):
+        end_nodes = list(nx.all_neighbors(self.G, (opponent.y, opponent.x)))
+        opp_front_node = None
+        if opponent.direction == Direction.UP:
+            opp_front_node = (opponent.y-1, opponent.x)
+        if opponent.direction == Direction.DOWN:
+            opp_front_node = (opponent.y+1, opponent.x)
+        if opponent.direction == Direction.RIGHT:
+            opp_front_node = (opponent.y, opponent.x+1)
+        if opponent.direction == Direction.LEFT:
+            opp_front_node = (opponent.y, opponent.x-1)
+        if opp_front_node in end_nodes:
+            end_nodes.remove(opp_front_node)
+        print((player.y, player.x))
+        for end_node in end_nodes:
+            print(end_node)
+        paths = [self.get_shortest_path(player, GameObject(end_node[1], end_node[0]), []) for end_node in end_nodes]
+        if len(paths)==0:
+            return []
+        return paths[self.argmin([len(path) for path in paths])]        
+        
     def get_move(self, gameboard, player, opponent):
         start = millitime()  
 
