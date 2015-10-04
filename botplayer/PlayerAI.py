@@ -3,6 +3,7 @@ import time
 from PythonClientAPI.libs.Game.Enums import *
 from PythonClientAPI.libs.Game.GameObjects import GameObject
 from PythonClientAPI.libs.Game.MapOutOfBoundsException import *
+from TurretHunter import TurretHunter
 from networkx import nx
 
 millitime = lambda: int(round(time.time() * 1000))
@@ -19,8 +20,8 @@ def turretFARC(a):
 class PlayerAI:
     def __init__(self):
         # Initialize any objects or variables you need here.
-        self.tr_firingarc = [] # Turrets, firing arc (x,y)
         self.i = -1;
+        self.dieTurrets = None
         pass
         
     def should_fire_laser(self, gameboard, player, opponent):
@@ -70,37 +71,6 @@ class PlayerAI:
                 wall_encountered[3] = True
         return avoid_list
 
-    def getTurretFARC(self, gameboard):
-        # Tiles affected by turrets firing
-        # Calculates a list of lists (y,x)
-        
-        for b in gameboard.turrets:
-            # Firing range of turret
-            d = []
-            hasWall = [False, False, False, False] 
-            turretFARC("Checking turret: " + str(b.x) + " " + str(b.y))
-            for i in range(1,5):
-                # Check in each of the four cardinal directions
-                if (not gameboard.is_wall_at_tile(b.x, (b.y+i)%gameboard.height) and not hasWall[0]):
-                    d.append((b.x, (b.y+i)%gameboard.height))
-                else: 
-                    hasWall[0]=True
-
-                if (not gameboard.is_wall_at_tile(b.x, (b.y-i)%gameboard.height) and not hasWall[1]):
-                    d.append((b.x, (b.y-i)%gameboard.height))
-                else:
-                    hasWall[1]=True
-
-                if (not gameboard.is_wall_at_tile((b.x+i)%gameboard.width, b.y) and not hasWall[2]):
-                    d.append(((b.x+i)%gameboard.width, b.y))
-                else:
-                    hasWall[2]=True
-
-                if (not gameboard.is_wall_at_tile((b.x-i)%gameboard.width, b.y) and not hasWall[3]):
-                    d.append(((b.x-i)%gameboard.width, b.y))
-                else:
-                    hasWall[3]=True
-            self.tr_firingarc.append(d)
 
     def TilesToAvoid(self, gameboard, player, opponent):
         # Checks if a tile is dangerous, given that tile argument is 
@@ -110,9 +80,9 @@ class PlayerAI:
         # Check for incoming turret fire
         for i, b in enumerate(gameboard.turrets):
             if b.is_firing_next_turn:
-                avoid += [(k[1], k[0]) for k in self.tr_firingarc[i]] # Convert to (y,x)
+                avoid += self.dieTurrets.getTurretFARCinYX(i)# Convert to (y,x)
 
-        turretFARC("Turret tiles: " + str(avoid))
+        # turretFARC("Turret tiles: " + str(avoid))
 
         # Check for incoming bullets
         for i, b in enumerate(gameboard.bullets):
@@ -257,6 +227,9 @@ class PlayerAI:
         
     def get_move(self, gameboard, player, opponent):
         start = millitime()  
+
+        self.dieTurrets = TurretHunter()
+
         turretFARC("##### Turn: " + str(gameboard.current_turn) + " #####")
         dbout("")
         dbout("")
@@ -264,21 +237,56 @@ class PlayerAI:
         if gameboard.current_turn == 0:
             self.generate_graph(gameboard)
             dbout("graph generated!")
-            self.getTurretFARC(gameboard)
+            #dbout(nx.shortest_path(self.G, (player.y, player.x), (pu.y, pu.x)))
+            self.dieTurrets.getTurretFARC(gameboard)
             dbout("Calculated turret firing arcs")
-            
-        path = self.path_to_enemy(gameboard, player, opponent)
-#        los, path = self.opponent_is_in_los(gameboard, player, opponent)
-#        if los==True:
-#            print("ENEMY IN LOS")
-#            mmove = self.movement_direction(path, gameboard, player)
-#            if mmove == Move.FORWARD:
-#                return Move.SHOOT
-#            else:
-#                return mmove
-#        else:
-#            print("ENEMY NOT IN LOS")
+
+        los, path = self.opponent_is_in_los(gameboard, player, opponent)
+        if los==True:
+            print("ENEMY IN LOS")
+            mmove = self.movement_direction(path, gameboard, player)
+            if mmove == Move.FORWARD:
+                return Move.SHOOT
+            else:
+                return mmove
+        else:
+            print("ENEMY NOT IN LOS")
     
+        # if player.shield_count>0:
+        #     return Move.SHIELD
+    
+        if player.laser_count>0 and self.should_fire_laser(gameboard, player, opponent):
+            return Move.LASER
+    
+        # path = self.get_shortest_path(player, pu, [(6,1)])
+        path = []        
+        avoidance_list = self.TilesToAvoid(gameboard, player, opponent)
+        try:
+            if opponent.laser_count > 0:
+                avoidance_list.extend(self.avoid_opponent_laser(gameboard, opponent))
+            dbout(avoidance_list)
+       
+            to_avoid = []
+            while True:
+                path = self.closest_power_up(gameboard, player, to_avoid)
+                if path[1] not in avoidance_list:
+                    break
+                to_avoid.append(path[1])
+        except:
+            print("EXCEPTION: UNABLE TO FIND PATH")
+            dbout(self.G.edges())
+            path = []
+            if (player.y, player.x) in avoidance_list and player.shield_count > 0:
+                return Move.SHIELD
+            else:
+                # Go down in a blaze of glory
+                return Move.SHOOT
+        
+        # Debug for printing bullet specs
+        # if len(gameboard.bullets) > 0:
+        #     for i, b in enumerate(gameboard.bullets):
+        #         dbout(str(i) + ":" + str(b.x) + "," + str(b.y) + "," + str(b.direction)+ "\t")
+        
         end = millitime()
         print("Time elapsed:" + str(end - start))
         
