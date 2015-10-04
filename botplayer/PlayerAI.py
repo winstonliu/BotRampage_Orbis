@@ -97,7 +97,7 @@ class PlayerAI:
 
         # Check for incoming turret fire
         for i, b in enumerate(gameboard.turrets):
-            if b.is_firing_next_turn:
+            if b.is_firing_next_turn and (player.x, player.y) in self.tr_firingarc[i]:
                 avoid += [(k[1], k[0]) for k in self.tr_firingarc[i]] # Convert to (y,x)
 
         dbout("Turret tiles: " + str(avoid))
