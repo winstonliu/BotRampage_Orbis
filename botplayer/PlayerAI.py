@@ -56,28 +56,28 @@ class PlayerAI:
             if not isWall[0] and not gameboard.is_wall_at_tile(opponent.x, (opponent.y-i)%gameboard.height):
                 if opponent.laser_count > 0:
                     avoid_list.append(((opponent.y-i)%gameboard.height, opponent.x)) # go up
-                if opponent.direction == Direction.UP and i < 3:
+                elif opponent.direction == Direction.UP and i < 3:
                     avoid_list.append(((opponent.y-i)%gameboard.height, opponent.x)) # go up
             else:
                 isWall[0] = True
             if not isWall[1] and not gameboard.is_wall_at_tile(opponent.x, (opponent.y+i)%gameboard.height):
                 if opponent.laser_count > 0: 
                     avoid_list.append(((opponent.y+i)%gameboard.height, opponent.x)) # down
-                if opponent.direction == Direction.DOWN and i < 3:
+                elif opponent.direction == Direction.DOWN and i < 3:
                     avoid_list.append(((opponent.y+i)%gameboard.height, opponent.x)) # down
             else:
                 isWall[1] = True
             if not isWall[2] and not gameboard.is_wall_at_tile((opponent.x+i)%gameboard.width, opponent.y):
                 if opponent.laser_count > 0: 
                     avoid_list.append((opponent.y, (opponent.x+i)%gameboard.width)) #right
-                if opponent.direction == Direction.RIGHT and i < 3:
+                elif opponent.direction == Direction.RIGHT and i < 3:
                     avoid_list.append((opponent.y, (opponent.x+i)%gameboard.width)) #right
             else:
                 isWall[2] = True
             if not isWall[3] and not gameboard.is_wall_at_tile((opponent.x-i)%gameboard.width, opponent.y):
                 if opponent.laser_count > 0: 
                     avoid_list.append((opponent.y, (opponent.x-i)%gameboard.width)) #left
-                if opponent.direction == Direction.LEFT and i < 3:
+                elif opponent.direction == Direction.LEFT and i < 3:
                     avoid_list.append((opponent.y, (opponent.x-i)%gameboard.width)) #left
             else:
                 isWall[3] = True
