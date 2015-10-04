@@ -313,13 +313,13 @@ class PlayerAI:
         # Winston, add turrets etc to this avoid list
         avoid_list = self.avoid_opponent_fire(gameboard, opponent)
         avoid_list += self.TilesToAvoid(gameboard, player, opponent)
-        # if (player.y, player.x) in avoid_list:
-        #     path, nmoves = self.path_to_next_safest_spot(gameboard, player, opponent, avoid_list)
-        #     if nmoves == 1:
-        #         return self.movement_direction(path, gameboard, player)
-        # else:
-        #     pass
-        #
+        if (player.y, player.x) in avoid_list:
+            path, nmoves = self.path_to_next_safest_spot(gameboard, player, opponent, avoid_list)
+            if nmoves == 1:
+                return self.movement_direction(path, gameboard, player)
+        else:
+            pass
+        
         # Hunt turrets
         # for i, b in enumerate(gameboard.turrets):
         #     los, path = self.opponent_is_in_los(gameboard, player, b)
@@ -342,7 +342,9 @@ class PlayerAI:
 
             if (player.y, player.x) in avoid_list and player.shield_count > 0:
                return Move.SHIELD
-       
+            elif player.teleport_count > 0:
+               return Move.TELEPORT
+
             to_avoid = []
             while True:
                 if len(gameboard.power_ups) > 0:
