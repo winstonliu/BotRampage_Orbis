@@ -27,7 +27,7 @@ class PlayerAI:
     def closest_power_up(self, gameboard, player, avoid_list):
         paths = []
         for ps in gameboard.power_ups:
-            paths.append(self.get_shortest_path(player, ps,avoid_list)) #TO ADD - AVOID
+            paths.append(self.get_shortest_path(player, ps, avoid_list)) #TO ADD - AVOID
         mind = 1000000
         cur_index = 0
         for i in range(0, len(paths)):
@@ -118,8 +118,6 @@ class PlayerAI:
         avoid.append((opponent.y, opponent.x))
         if (player.y, player.x) in avoid:
             del avoid[avoid.index((player.y, player.x))]
-
-        dbout("Tiles to avoid: " + str(avoid))
         return avoid
                  
     def get_shortest_path(self, player, target, avoid):
@@ -127,14 +125,36 @@ class PlayerAI:
             avoid ([nodes]): nodes to temporarily avoid, (y,x)
         """
         temp_edge_storage = []
+        if (target.y, target.x) in self.G.nodes():
+            dbout("TARGET NODE EXISTS:")
+            dbout(str(target.y) + "," + str(target.x))
+        else:
+            dbout("TARGET NODE DOES NOT EXIST")
+            dbout(str(target.y) + "," + str(target.x))
+
+        if (player.y, player.x) in self.G.nodes():
+            dbout("PLAYER NODE EXISTS")
+        else:
+            dbout("PLAYER NODE DOES NOT EXIST")
+        dbout("AVOID LIST:")
+        dbout(avoid)
+        temp_edge_storage = []
+        path = []
         for node in avoid:
             neighbors = list(nx.all_neighbors(self.G, node))
             for neighbor in neighbors:
                 self.G.remove_edge(node, neighbor)
-            temp_edge_storage = [(node, neighbor) for neighbor in neighbors]
-        path = nx.shortest_path(self.G, (player.y, player.x), (target.y, target.x))
+            temp_edge_storage.extend([(node, neighbor) for neighbor in neighbors])
+        try:
+            path = nx.shortest_path(self.G, (player.y, player.x), (target.y, target.x))
+        except:
+            print("EXCEPTION: UNABLE TO FIND SHORTEST PATH")
+        dbout("Restoring edges:")
+        dbout(temp_edge_storage)        
         for edge in temp_edge_storage:
             self.G.add_edge(edge[0], edge[1])
+        dbout("PATH FROM PLAYER TO TARGET GIVEN AVOID LIST:")
+        dbout(path)
         return path
 
     def movement_direction(self, y1, x1, y2, x2, gameboard, player):
@@ -197,9 +217,9 @@ class PlayerAI:
 
     def get_move(self, gameboard, player, opponent):
         start = millitime()  
-
-        dbout("Width: " + str(gameboard.width) + " Height: " + str(gameboard.height))
-
+        dbout("")
+        dbout("")
+        dbout("")
         # Initialize bot params
         if gameboard.current_turn == 0:
             self.generate_graph(gameboard)
@@ -214,7 +234,9 @@ class PlayerAI:
         if player.laser_count>0 and self.should_fire_laser(gameboard, player, opponent):
             return Move.LASER
     
+    
         # path = self.get_shortest_path(player, pu, [(6,1)])
+        path = []        
         try:
             avoidance_list = self.TilesToAvoid(gameboard, player, opponent)
             if opponent.laser_count > 0:
@@ -227,9 +249,9 @@ class PlayerAI:
                 if path[1] not in avoidance_list:
                     break
                 to_avoid.append(path[1])
-            
-            dbout(path)
         except:
+            print("EXCEPTION: UNABLE TO FIND PATH")
+            dbout(self.G.edges())
             path = []
         
         # Debug for printing bullet specs
@@ -245,10 +267,8 @@ class PlayerAI:
         # self.i = self.i+1 if self.i<len(moves)-1 else len(moves)-1
         # return moves[self.i]
 
-        dbout("Following path: ")
+        dbout("Attempting to Follow path: ")
         dbout(path)
-        dbout("path length:")
-        dbout(len(path))
         if len(path)>1:
             next_move = self.movement_direction(path[0][0], path[0][1], path[1][0], path[1][1], gameboard, player)
             dbout("Move")            
