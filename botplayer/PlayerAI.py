@@ -127,6 +127,9 @@ class PlayerAI:
             path = nx.shortest_path(self.G, (player.y, player.x), (target.y, target.x))
         except:
             dbout("EXCEPTION: UNABLE TO FIND SHORTEST PATH")
+            for edge in temp_edge_storage:
+                self.G.add_edge(edge[0], edge[1])
+            raise Exception("Except")
         for edge in temp_edge_storage:
             self.G.add_edge(edge[0], edge[1])
         dbout("PATH FROM PLAYER TO TARGET GIVEN AVOID LIST:")
@@ -153,6 +156,9 @@ class PlayerAI:
             del paths[0]            
         except:
             dbout("EXCEPTION: UNABLE TO FIND SHORTEST PATH")
+            for edge in temp_edge_storage:
+                self.G.add_edge(edge[0], edge[1])
+            raise Exception("Except")
         for edge in temp_edge_storage:
             self.G.add_edge(edge[0], edge[1])
         dbout("PATH FROM PLAYER TO TARGET GIVEN AVOID LIST:")
@@ -314,7 +320,7 @@ class PlayerAI:
         avoid_list += self.TilesToAvoid(gameboard, player, opponent)
         if (player.y, player.x) in avoid_list:
             try:
-            path, nmoves = self.path_to_next_safest_spot(gameboard, player, opponent, avoid_list)
+                path, nmoves = self.path_to_next_safest_spot(gameboard, player, opponent, avoid_list)
             except:
                 pass            
             if nmoves == 1:
