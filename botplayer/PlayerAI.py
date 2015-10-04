@@ -77,11 +77,9 @@ class PlayerAI:
         avoid = []
 
         # Check for incoming turret fire
-        for i, b in enumerate(gameboard.turrets):
-            if b.is_firing_next_turn:
-                avoid += self.dieTurrets.getTurretFARCinYX(i)# Convert to (y,x)
+        avoid += self.dieTurrets.buildAvoidanceListYX(gameboard)
 
-        # turretFARC("Turret tiles: " + str(avoid))
+        turretFARC("Turret tiles: " + str(avoid))
 
         # Check for incoming bullets
         for i, b in enumerate(gameboard.bullets):
@@ -197,20 +195,20 @@ class PlayerAI:
     def get_move(self, gameboard, player, opponent):
         start = millitime()  
 
-        self.dieTurrets = TurretHunter()
-
         turretFARC("##### Turn: " + str(gameboard.current_turn) + " #####")
         dbout("")
         dbout("")
         # Initialize bot params
         if gameboard.current_turn == 0:
+            self.dieTurrets = TurretHunter()
             self.generate_graph(gameboard)
             dbout("graph generated!")
             #dbout(nx.shortest_path(self.G, (player.y, player.x), (pu.y, pu.x)))
             self.dieTurrets.getTurretFARC(gameboard)
             dbout("Calculated turret firing arcs")
-
-
+        
+        # Update turret list to check for dead turrets
+        self.dieTurrets.updateTurretList(gameboard)
 
         los, path = self.opponent_is_in_los(gameboard, player, opponent)
         if los==True:
@@ -236,6 +234,9 @@ class PlayerAI:
             if opponent.laser_count > 0:
                 avoidance_list.extend(self.avoid_opponent_laser(gameboard, opponent))
             dbout(avoidance_list)
+
+            if (player.y, player.x) in avoidance_list and player.shield_count > 0:
+               return Move.SHIELD
        
             to_avoid = []
             while True:
@@ -249,9 +250,7 @@ class PlayerAI:
             path = []
             if (player.y, player.x) in avoidance_list and player.shield_count > 0:
                 return Move.SHIELD
-            else:
-                # Go down in a blaze of glory
-                return Move.SHOOT
+       
         
         # Debug for printing bullet specs
         # if len(gameboard.bullets) > 0:
@@ -266,7 +265,6 @@ class PlayerAI:
         # self.i = self.i+1 if self.i<len(moves)-1 else len(moves)-1
         # return moves[self.i]
 
-        
         dbout("Attempting to Follow path: ")
         dbout(path)
         if len(path)>1:
@@ -274,4 +272,3 @@ class PlayerAI:
             return next_move
 
         return Move.NONE
-

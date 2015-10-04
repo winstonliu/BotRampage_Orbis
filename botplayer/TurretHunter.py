@@ -4,7 +4,6 @@ from PythonClientAPI.libs.Game.MapOutOfBoundsException import *
 class TurretHunter:
     def __init__(self):
         self.turret_mappings = {}
-        self.tr_firingarc = []
         self.turret_info = {} # key is index, elements is dictionary of firing arc and mappings
     
     def getTurretFARC(self, gameboard):
@@ -32,6 +31,7 @@ class TurretHunter:
                     d.append(((b.x-i)%gameboard.width, b.y))
                 else:
                     hasWall[3]=True
+            print("Key: " + str(j))
             self.turret_info[j] = {"FARC" : d, "MAP" : {}}
         self.updateTurretMappings() 
 
@@ -39,17 +39,18 @@ class TurretHunter:
         for i, b in enumerate(gameboard.turrets):
             if b.is_dead and i in self.turret_info:
                 del self.turret_info[i]
-        updateTurretMappings()
-        return self.tr_firingarc
          
     def updateTurretMappings(self):
         for turret in (self.turret_info):
             for b in self.turret_info[turret]["FARC"]:
                 self.turret_info[turret]["MAP"][(b[0], b[1])] = turret
 
-    def getTurretFARCinYX(self, index):
-        print(self.turret_info)
-        if index in self.turret_info:
-            return [(k[1], k[0]) for k in self.turret_info[index]["FARC"]] 
-        else:
-            return []
+    def buildAvoidanceListYX(self, gameboard):
+        avoid = []
+        for i, b in enumerate(gameboard.turrets):
+            print(str(i) + " index " + str(b.is_firing_next_turn))
+            if b.is_firing_next_turn:
+                print(self.turret_info[i]["FARC"])
+                for k in self.turret_info[i]["FARC"]:
+                    avoid.append((k[1], k[0]))
+        return avoid
