@@ -20,7 +20,7 @@ class PlayerAI:
         
     def should_fire_laser(self, gameboard, player, opponent):
         path = self.get_shortest_path(player, opponent, [])
-        if len(path)<=5:
+        if len(path)<=5 and player.x==opponent.x or player.y==opponent.y:
             return True
         return False
         
