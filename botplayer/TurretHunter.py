@@ -9,8 +9,7 @@ def dbout(a):
 
 class TurretHunter:
     def __init__(self):
-        self.turret_mappings = {}
-        self.turret_info = {} # key is index, elements is dictionary of firing arc and mappings
+        self.turret_info = {} # key is index, elements is dictionary of firing arc
     
     def getTurretFARC(self, gameboard):
         # Tiles affected by turrets firing
@@ -38,19 +37,13 @@ class TurretHunter:
                 else:
                     hasWall[3]=True
             dbout("Key: " + str(j))
-            self.turret_info[j] = {"FARC" : d, "MAP" : {}}
-        self.updateTurretMappings() 
+            self.turret_info[j] = {"FARC" : d}
 
     def updateTurretList(self, gameboard):
         for i, b in enumerate(gameboard.turrets):
             if b.is_dead and i in self.turret_info:
                 del self.turret_info[i]
          
-    def updateTurretMappings(self):
-        for turret in (self.turret_info):
-            for b in self.turret_info[turret]["FARC"]:
-                self.turret_info[turret]["MAP"][(b[0], b[1])] = turret
-
     def buildAvoidanceListYX(self, gameboard):
         avoid = []
         for i, b in enumerate(gameboard.turrets):
@@ -60,6 +53,3 @@ class TurretHunter:
                 for k in self.turret_info[i]["FARC"]:
                     avoid.append((k[1], k[0]))
         return avoid
-    
-    def huntTurrets(self, gameboard):
-        pass

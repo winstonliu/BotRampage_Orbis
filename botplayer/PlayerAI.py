@@ -13,8 +13,8 @@ def dbout(a):
     # print(a)
     pass
 
-def turretFARC(a):
-    # print(a)
+def dbout2(a):
+    print(a)
     pass
 
 class PlayerAI:
@@ -22,6 +22,7 @@ class PlayerAI:
         # Initialize any objects or variables you need here.
         self.i = -1;
         self.dieTurrets = None
+        self.none_counter = 0;
         pass
         
     def should_fire_laser(self, gameboard, player, opponent):
@@ -90,8 +91,6 @@ class PlayerAI:
 
         # Check for incoming turret fire
         avoid += self.dieTurrets.buildAvoidanceListYX(gameboard)
-
-        turretFARC("Turret tiles: " + str(avoid))
 
         # Check for incoming bullets
         for i, b in enumerate(gameboard.bullets):
@@ -253,7 +252,7 @@ class PlayerAI:
     def get_move(self, gameboard, player, opponent):
         start = millitime()  
 
-        turretFARC("##### Turn: " + str(gameboard.current_turn) + " #####")
+        dbout2("##### Turn: " + str(gameboard.current_turn) + " #####")
         dbout("")
         dbout("")
         # Initialize bot params
@@ -282,10 +281,18 @@ class PlayerAI:
                     return mmove
         else:
             dbout("ENEMY NOT IN LOS")
-    
+
+        # Hunt turrets
+        for i, b in enumerate(gameboard.turrets):
+            los, path = self.opponent_is_in_los(gameboard, player, b)
+            if los==True:
+                dbout2("!!! TURRET IN LOS")
+                mmove = self.movement_direction(path, gameboard, player)
+                if mmove == Move.FORWARD: # we are pointed toward the turret and
+                    return Move.SHOOT
+
         # if player.shield_count>0:
         #     return Move.SHIELD
-    
     
         # path = self.get_shortest_path(player, pu, [(6,1)])
         path = []        
@@ -311,9 +318,11 @@ class PlayerAI:
             dbout("EXCEPTION: UNABLE TO FIND PATH")
             dbout(self.G.edges())
             path = []
-            if ((player.y, player.x) in avoidance_list and player.shield_count > 0 and 
-                    self.movement_direction(path, gameboard, player) != Move.FORWARD):
-                return Move.SHIELD
+            if ((player.y, player.x) in avoidance_list and self.movement_direction(path, gameboard, player) != Move.FORWARD):
+                if player.shield_count > 0:
+                    return Move.SHIELD
+                elif player.teleport_count > 0:
+                    return Move.TELEPORT
         
         # Debug for printing bullet specs
         # if len(gameboard.bullets) > 0:
@@ -330,8 +339,14 @@ class PlayerAI:
 
         dbout("Attempting to Follow path: ")
         dbout(path)
+        if (self.none_counter > 3):
+            return Move.LEFT
+
         if len(path)>1:
             next_move = self.movement_direction(path, gameboard, player)
+            if next_move == Move.NONE:
+                ++self.none_counter;
             return next_move
 
+        ++self.none_counter;
         return Move.NONE
