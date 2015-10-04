@@ -8,6 +8,10 @@ millitime = lambda: int(round(time.time() * 1000))
 
 def dbout(a):
     # Debug printout
+    # print(a)
+    pass
+
+def turretFARC(a):
     print(a)
     pass
 
@@ -20,7 +24,7 @@ class PlayerAI:
         
     def should_fire_laser(self, gameboard, player, opponent):
         path = self.get_shortest_path(player, opponent, [])
-        if len(path)<=5 and player.x==opponent.x or player.y==opponent.y:
+        if len(path)<=5 and (player.x==opponent.x or player.y==opponent.y):
             return True
         return False
         
@@ -73,7 +77,7 @@ class PlayerAI:
             # Firing range of turret
             d = []
             hasWall = [False, False, False, False] 
-            dbout("Checking turret: " + str(b.x) + " " + str(b.y))
+            turretFARC("Checking turret: " + str(b.x) + " " + str(b.y))
             for i in range(1,5):
                 # Check in each of the four cardinal directions
                 if (not gameboard.is_wall_at_tile(b.x, (b.y+i)%gameboard.height) and not hasWall[0]):
@@ -104,10 +108,10 @@ class PlayerAI:
 
         # Check for incoming turret fire
         for i, b in enumerate(gameboard.turrets):
-            if b.is_firing_next_turn and (player.x, player.y) in self.tr_firingarc[i]:
+            if b.is_firing_next_turn:
                 avoid += [(k[1], k[0]) for k in self.tr_firingarc[i]] # Convert to (y,x)
 
-        dbout("Turret tiles: " + str(avoid))
+        turretFARC("Turret tiles: " + str(avoid))
 
         # Check for incoming bullets
         for i, b in enumerate(gameboard.bullets):
@@ -123,8 +127,6 @@ class PlayerAI:
                 avoid.append((b.y, (b.x-1)%gameboard.width))
 
         avoid.append((opponent.y, opponent.x))
-        if (player.y, player.x) in avoid:
-            del avoid[avoid.index((player.y, player.x))]
         return avoid
                  
     def get_shortest_path(self, player, target, avoid):
@@ -224,14 +226,13 @@ class PlayerAI:
 
     def get_move(self, gameboard, player, opponent):
         start = millitime()  
-        dbout("")
+        turretFARC("##### Turn: " + str(gameboard.current_turn) + " #####")
         dbout("")
         dbout("")
         # Initialize bot params
         if gameboard.current_turn == 0:
             self.generate_graph(gameboard)
             dbout("graph generated!")
-            #dbout(nx.shortest_path(self.G, (player.y, player.x), (pu.y, pu.x)))
             self.getTurretFARC(gameboard)
             dbout("Calculated turret firing arcs")
 
@@ -246,8 +247,8 @@ class PlayerAI:
         else:
             print("ENEMY NOT IN LOS")
     
-        if player.shield_count>0:
-            return Move.SHIELD
+        # if player.shield_count>0:
+        #     return Move.SHIELD
     
         #if player.laser_count>0 and self.should_fire_laser(gameboard, player, opponent):
         #    return Move.LASER
@@ -284,13 +285,12 @@ class PlayerAI:
         # self.i = self.i+1 if self.i<len(moves)-1 else len(moves)-1
         # return moves[self.i]
 
-        #dbout("Attempting to Follow path: ")
-        #dbout(path)
-        #if len(path)>1:
-        #    next_move = self.movement_direction(path[0][0], path[0][1], path[1][0], path[1][1], gameboard, player)
-        #    dbout("Move")            
-        #    dbout(next_move)
-        #    return next_move
+        
+        dbout("Attempting to Follow path: ")
+        dbout(path)
+        if len(path)>1:
+            next_move = self.movement_direction(path, gameboard, player)
+            return next_move
 
         return Move.NONE
 
