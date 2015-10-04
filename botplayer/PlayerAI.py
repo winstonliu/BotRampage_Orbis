@@ -313,12 +313,12 @@ class PlayerAI:
         avoid_list = self.avoid_opponent_fire(gameboard, opponent)
         avoid_list += self.TilesToAvoid(gameboard, player, opponent)
         if (player.y, player.x) in avoid_list:
+            try:
             path, nmoves = self.path_to_next_safest_spot(gameboard, player, opponent, avoid_list)
+            except:
+                pass            
             if nmoves == 1:
-                try: 
                     return self.movement_direction(path, gameboard, player)
-                except:
-                    pass
             else:
                 if player.shield_count > 0:
                    return Move.SHIELD
