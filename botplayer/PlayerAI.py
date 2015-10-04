@@ -320,21 +320,14 @@ class PlayerAI:
         else:
             pass
         
-        # Hunt turrets
-        # for i, b in enumerate(gameboard.turrets):
-        #     los, path = self.opponent_is_in_los(gameboard, player, b)
-        #     if los==True:
-        #         dbout2("!!! TURRET IN LOS")
-        #         mmove = self.movement_direction(path, gameboard, player)
-        #         if mmove == Move.FORWARD: # we are pointed toward the turret and
-        #             return Move.SHOOT
-        
-        # if player.shield_count>0:
-        #     return Move.SHIELD
-    
-        # path = self.get_shortest_path(player, pu, [(6,1)])
+        yesno, path = self.opponent_is_in_los(gameboard, player, opponent)
+        if yesno:
+            mmove = self.movement_direction(path, gameboard, player)
+            if mmove == Move.FORWARD:
+                return Move.SHOOT
+            return mmove
+            
         path = []        
-        avoid_list = self.TilesToAvoid(gameboard, player, opponent)
         try:
             if opponent.laser_count > 0:
                 avoid_list.extend(self.avoid_opponent_laser(gameboard, opponent))
