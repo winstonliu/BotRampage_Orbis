@@ -13,8 +13,8 @@ def dbout(a):
     print(a)
     pass
 
-def turretFARC(a):
-    # print(a)
+def dbout2(a):
+    print(a)
     pass
 
 class PlayerAI:
@@ -22,6 +22,7 @@ class PlayerAI:
         # Initialize any objects or variables you need here.
         self.i = -1;
         self.dieTurrets = None
+        self.none_counter = 0;
         pass
         
     def should_fire_laser(self, gameboard, player, opponent):
@@ -91,8 +92,6 @@ class PlayerAI:
 
         # Check for incoming turret fire
         avoid += self.dieTurrets.buildAvoidanceListYX(gameboard)
-
-        turretFARC("Turret tiles: " + str(avoid))
 
         # Check for incoming bullets
         for i, b in enumerate(gameboard.bullets):
@@ -293,7 +292,7 @@ class PlayerAI:
     def get_move(self, gameboard, player, opponent):
         start = millitime()  
 
-        turretFARC("##### Turn: " + str(gameboard.current_turn) + " #####")
+        dbout2("##### Turn: " + str(gameboard.current_turn) + " #####")
         dbout("")
         dbout("")
         # Initialize bot params
@@ -308,14 +307,79 @@ class PlayerAI:
         # Update turret list to check for dead turrets
         self.dieTurrets.updateTurretList(gameboard)
 
+        # Winston, add turrets etc to this avoid list
         avoid_list = self.avoid_opponent_fire(gameboard, opponent)
         if (player.y, player.x) in avoid_list:
             path = self.path_to_next_safest_spot(gameboard, player, opponent, avoid_list)
             return self.movement_direction(path, gameboard, player)
         else:
-            return Move.NONE
 
+        # Hunt turrets
+        for i, b in enumerate(gameboard.turrets):
+            los, path = self.opponent_is_in_los(gameboard, player, b)
+            if los==True:
+                dbout2("!!! TURRET IN LOS")
+                mmove = self.movement_direction(path, gameboard, player)
+                if mmove == Move.FORWARD: # we are pointed toward the turret and
+                    return Move.SHOOT
+
+        # if player.shield_count>0:
+        #     return Move.SHIELD
+    
+        # path = self.get_shortest_path(player, pu, [(6,1)])
+        path = []        
+        avoidance_list = self.TilesToAvoid(gameboard, player, opponent)
+        try:
+            if opponent.laser_count > 0:
+                avoidance_list.extend(self.avoid_opponent_laser(gameboard, opponent))
+            dbout(avoidance_list)
+
+            if (player.y, player.x) in avoidance_list and player.shield_count > 0:
+               return Move.SHIELD
+       
+            to_avoid = []
+            while True:
+                if len(gameboard.power_ups) > 0:
+                    path = self.closest_power_up(gameboard, player, to_avoid)
+                else:
+                    path = self.path_to_enemy(gameboard, player, opponent, to_avoid)
+
+                if path[1] not in avoidance_list:
+                    break
+                to_avoid.append(path[1])
+        except:
+            dbout("EXCEPTION: UNABLE TO FIND PATH")
+            dbout(self.G.edges())
+            path = []
+            if ((player.y, player.x) in avoidance_list and self.movement_direction(path, gameboard, player) != Move.FORWARD):
+                if player.shield_count > 0:
+                    return Move.SHIELD
+                elif player.teleport_count > 0:
+                    return Move.TELEPORT
+        
+        # Debug for printing bullet specs
+        # if len(gameboard.bullets) > 0:
+        #     for i, b in enumerate(gameboard.bullets):
+        #         dbout(str(i) + ":" + str(b.x) + "," + str(b.y) + "," + str(b.direction)+ "\t")
+        
         end = millitime()
         print("Time elapsed:" + str(end - start))
 
+        # Hardcode movements 
+        # moves = [Move.SHOOT, Move.NONE]
+        # self.i = self.i+1 if self.i<len(moves)-1 else len(moves)-1
+        # return moves[self.i]
+
+        dbout("Attempting to Follow path: ")
+        dbout(path)
+        if (self.none_counter > 3):
+            return Move.LEFT
+
+        if len(path)>1:
+            next_move = self.movement_direction(path, gameboard, player)
+            if next_move == Move.NONE:
+                ++self.none_counter;
+            return next_move
+
+        ++self.none_counter;
         return Move.NONE
