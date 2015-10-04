@@ -10,11 +10,11 @@ millitime = lambda: int(round(time.time() * 1000))
 
 def dbout(a):
     # Debug printout
-    print(a)
+    # print(a)
     pass
 
 def dbout2(a):
-    print(a)
+    # print(a)
     pass
 
 class PlayerAI:
@@ -307,34 +307,40 @@ class PlayerAI:
         # Update turret list to check for dead turrets
         self.dieTurrets.updateTurretList(gameboard)
 
+        if player.laser_count>0 and self.should_fire_laser(gameboard, player, opponent):
+             return Move.LASER
+
         # Winston, add turrets etc to this avoid list
         avoid_list = self.avoid_opponent_fire(gameboard, opponent)
-        if (player.y, player.x) in avoid_list:
-            path = self.path_to_next_safest_spot(gameboard, player, opponent, avoid_list)
-            return self.movement_direction(path, gameboard, player)
-        else:
-
+        avoid_list += self.TilesToAvoid(gameboard, player, opponent)
+        # if (player.y, player.x) in avoid_list:
+        #     path, nmoves = self.path_to_next_safest_spot(gameboard, player, opponent, avoid_list)
+        #     if nmoves == 1:
+        #         return self.movement_direction(path, gameboard, player)
+        # else:
+        #     pass
+        #
         # Hunt turrets
-        for i, b in enumerate(gameboard.turrets):
-            los, path = self.opponent_is_in_los(gameboard, player, b)
-            if los==True:
-                dbout2("!!! TURRET IN LOS")
-                mmove = self.movement_direction(path, gameboard, player)
-                if mmove == Move.FORWARD: # we are pointed toward the turret and
-                    return Move.SHOOT
-
+        # for i, b in enumerate(gameboard.turrets):
+        #     los, path = self.opponent_is_in_los(gameboard, player, b)
+        #     if los==True:
+        #         dbout2("!!! TURRET IN LOS")
+        #         mmove = self.movement_direction(path, gameboard, player)
+        #         if mmove == Move.FORWARD: # we are pointed toward the turret and
+        #             return Move.SHOOT
+        
         # if player.shield_count>0:
         #     return Move.SHIELD
     
         # path = self.get_shortest_path(player, pu, [(6,1)])
         path = []        
-        avoidance_list = self.TilesToAvoid(gameboard, player, opponent)
+        avoid_list = self.TilesToAvoid(gameboard, player, opponent)
         try:
             if opponent.laser_count > 0:
-                avoidance_list.extend(self.avoid_opponent_laser(gameboard, opponent))
-            dbout(avoidance_list)
+                avoid_list.extend(self.avoid_opponent_laser(gameboard, opponent))
+            dbout(avoid_list)
 
-            if (player.y, player.x) in avoidance_list and player.shield_count > 0:
+            if (player.y, player.x) in avoid_list and player.shield_count > 0:
                return Move.SHIELD
        
             to_avoid = []
@@ -344,14 +350,14 @@ class PlayerAI:
                 else:
                     path = self.path_to_enemy(gameboard, player, opponent, to_avoid)
 
-                if path[1] not in avoidance_list:
+                if path[1] not in avoid_list:
                     break
                 to_avoid.append(path[1])
         except:
             dbout("EXCEPTION: UNABLE TO FIND PATH")
             dbout(self.G.edges())
             path = []
-            if ((player.y, player.x) in avoidance_list and self.movement_direction(path, gameboard, player) != Move.FORWARD):
+            if ((player.y, player.x) in avoid_list and self.movement_direction(path, gameboard, player) != Move.FORWARD):
                 if player.shield_count > 0:
                     return Move.SHIELD
                 elif player.teleport_count > 0:
